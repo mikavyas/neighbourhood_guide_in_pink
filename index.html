@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Toronto's Neighbourhoods</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.js"></script>
+    <link
+      href="https://api.tiles.mapbox.com/mapbox-gl-js/v3.1.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      h2,
+      h3 {
+        margin: 10px;
+        font-size: 18px;
+      }
+
+      h3 {
+        font-size: 16px;
+      }
+
+      p {
+        margin: 10px;
+      }
+
+      .map-overlay {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background: #fff;
+        margin-right: 20px;
+        font-family: Arial, sans-serif;
+        overflow: auto;
+        border-radius: 3px;
+      }
+
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+
+      #features {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        top: 0;
+        height: 100px;
+        margin-top: 20px;
+        width: 250px;
+      }
+
+      #pd {
+        text-align: center;
+      }
+
+      #toggleButton {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #ffffff;
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div class="map-overlay" id="features">
+      <h2>Neighbourhood Map</h2>
+      <div id="pd"><p>Hover over a neighbourhood!</p></div>
+      <button id="toggleButton">Show Neighbourhoods</button>
+    </div>
+
+    <script>
+      // mapbox access token 
+      mapboxgl.accessToken = 'pk.eyJ1IjoibWlrYXZ5YXMiLCJhIjoiY2xoczhjcDR1MGZqMzNjcW1scm1paTRpNyJ9.yYDAti9jKKB23RGPg8SeRA';
+
+      // create map
+      const map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/mikavyas/cltpbjy0g037g01p0dnqh2h3z' // map style URL from Mapbox Studio
+      });   
+
+      // map load command and callback function
+      map.on('load', () => {
+        // create cursor 
+        map.getCanvas().style.cursor = 'default';
+
+        // set map bounds to Toronto 
+        const torontoBounds = [
+          [-79.6392, 43.5808], // Southwest coordinates (longitude, latitude)
+          [-79.115, 43.8554]   // Northeast coordinates (longitude, latitude)
+        ];
+
+        try {
+          map.fitBounds(torontoBounds);
+        } catch (error) {
+          console.error('Error fitting bounds:', error);
+        }
+
+        // change info window on mouse hover
+        map.on('mousemove', (event) => {
+          const neighborhood = map.queryRenderedFeatures(event.point, {
+            layers: ['neighbourhoods-7osrb8']
+          })[0]; 
+
+          document.getElementById('pd').innerHTML = neighborhood
+            ? `<h3>${neighborhood.properties.AREA_NAME}</h3>`
+            : `<p>Hover over a neighbourhood!</p>`;
+        });
+
+        // create toggle button to change neighbourhood layer visibility
+        document.getElementById('toggleButton').addEventListener('click', function() {
+          const visibility = map.getLayoutProperty('neighbourhoods-7osrb8', 'visibility');
+
+        // function toggles between hiding and displaying the neighbourhood boundary
+          if (visibility === 'visible') {
+            map.setLayoutProperty('neighbourhoods-7osrb8', 'visibility', 'none');
+            this.textContent = 'Show Neighbourhoods';
+          } else {
+            map.setLayoutProperty('neighbourhoods-7osrb8', 'visibility', 'visible');
+            this.textContent = 'Hide Neighbourhoods';
+          }
+        });
+
+        // when the neighbourhood layer is hidden mouse hover displays the name of the place of attraction 
+        map.on('mousemove', 'places-of-interest-and-attrac-33t6cw', function(event) {
+          if (map.getLayoutProperty('neighbourhoods-7osrb8', 'visibility') === 'none') {
+            const placeName = event.features[0].properties.PLACE_NAME;
+            document.getElementById('pd').innerHTML = `<h3>${placeName}</h3>`;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
+
